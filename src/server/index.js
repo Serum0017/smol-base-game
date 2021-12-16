@@ -109,17 +109,16 @@ function mainLoop() {
 	}
 
 	for (let i in players) {
-		players[i].playerUpdatePack.push(players[i].getUpdatePack());
 		for(let j in players) {
 			if(players[j].id != players[i].id){
-				players[i].playerUpdatePack.push(players[j].getUpdatePack());
+				playerPack.push(players[j].getUpdatePack());
 			}
 		}
 		playerPack.push(players[i].getUpdatePack());
 	}
 
 	for (let i in players){
-		players[i].playerUpdatePack = [];
+		players[i].playerPack = [];
 		if(playerPack.length > 0){
 			players[i].client.send(msgpack.encode({ pu: playerPack }));
 		}

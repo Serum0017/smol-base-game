@@ -4,10 +4,12 @@ class Player {
 	constructor(id, client) {
         this.x = 640;
         this.y = 360;
+        this.xChanged = false;
+        this.yChanged = false;
         this.id = id;
         this.client = client;
         this.mousePos = { x: 0, y: 0 };
-        this.playerUpdatePack = [];
+        this.vel = { x: 0, y: 0 };
     }
 
     getUpdatePack() {
@@ -44,9 +46,23 @@ class Player {
     }
 
     move(delta) {
-        this.x = this.mousePos.x;
-        this.y = this.mousePos.y;
-        //console.log(this.x + ' ' + this.y);
+        this.vel.x = 0;
+        this.vel.y = 0;
+        let dx = this.x - this.mousePos.x;
+        let dy = this.y - this.mousePos.y;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        distance /= 1000;
+        let angle = Math.atan2(dy, dx);
+        if (distance > this.speed) {
+            distance = this.speed;
+        }
+        console.log(angle);
+        this.vel.x = Math.cos(angle) * distance * -1;
+        this.vel.y = Math.sin(angle) * distance * -1;
+        this.x += this.vel.x * delta;
+        this.y += this.vel.y * delta;
+        this.xChanged = true;
+        this.yChanged = true;
     }
 }
 

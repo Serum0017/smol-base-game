@@ -4,9 +4,6 @@ class Player{
       this.y = initPack.y;
       this.id = initPack.id;
       this.mousePos = initPack.msp;
-      this.renderX = this.x;
-      this.renderY = this.y;
-      this.playerUpdatePack = [];
   }
   updatePack(updatePack){
       if (updatePack.x != undefined){
@@ -18,9 +15,5 @@ class Player{
       if (updatePack.msp != undefined){
           this.mousePos = updatePack.msp;
       }
-  }
-  /*interp(delta){
-      this.renderX = lerp(this.renderX, this.x, delta);
-      this.renderY = lerp(this.renderY, this.y, delta);
-  }*/
+    }
 }

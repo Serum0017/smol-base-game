@@ -44,7 +44,7 @@ function renderGame() {
     //players[i].interp(delt);
     if (players[i].id == selfId) {
       ctx.fillStyle = '#1b37c2';
-      ctx.arc(player.mousePos.x, player.mousePos.y, 17.14, 0, 2 * Math.PI);
+      ctx.arc(player.x, player.y, 17.14, 0, 2 * Math.PI);
       ctx.fill();
       ctx.closePath();
     }
@@ -55,7 +55,7 @@ function renderGame() {
     if (players[i].id != selfId) {
       ctx.beginPath();
       ctx.fillStyle = '#2b3670';
-      ctx.arc(player.mousePos.x, player.mousePos.y, 17.14, 0, 2 * Math.PI);
+      ctx.arc(player.x, player.y, 17.14, 0, 2 * Math.PI);
       ctx.fill();
       ctx.closePath();
     }
