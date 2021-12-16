@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/84d0a47d-9392-46f8-90e5-292bd26307b0/resourceGroups/evades3/providers/Microsoft.Web/sites/multiplayertest",
+    "appService.deploySubpath": "."
+}

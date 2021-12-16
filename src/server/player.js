@@ -53,9 +53,6 @@ class Player {
         let distance = Math.sqrt(dx * dx + dy * dy);
         distance /= 1000;
         let angle = Math.atan2(dy, dx);
-        if (distance > this.speed) {
-            distance = this.speed;
-        }
         console.log(angle);
         this.vel.x = Math.cos(angle) * distance * -1;
         this.vel.y = Math.sin(angle) * distance * -1;
