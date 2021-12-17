@@ -6,6 +6,7 @@ const ws = new WebSocket(HOST);
 ws.binaryType = "arraybuffer"
 
 var players = {};
+var enemies = {};
 
 var renderPosX = canvas.width/2;
 var renderPosY = canvas.height/2;
@@ -14,6 +15,7 @@ let selfId = "";
 
 ws.addEventListener("message", function (data) {
     let message = msgpack.decode(new Uint8Array(data.data));
+    // Recieving Messages from the server and updating the client side constructor correspondingly
     if (message.pi) {
       for (let i in message.pi) {
         players[message.pi[i].id] = new Player(message.pi[i]);
@@ -26,9 +28,27 @@ ws.addEventListener("message", function (data) {
         }
       }
     }
+
+    // Updating Enemies
+    if (message.ei) {
+      for (let i in message.ei) {
+        enemies[message.ei[i].id] = new Enemy(message.ei[i]);
+      }
+    }
+    if (message.eu) {
+      for (let a in message.eu) {
+        if (enemies[message.eu[a].id]) {
+          enemies[message.eu[a].id].updatePack(message.eu[a]);
+        }
+      }
+    }
+
+    // Players leaving
     if (message.l) {
       delete players[message.l];
     }
+
+    // Player canvas resizing (caused by changing window size)
     if (message.si) {
       Resize();
       requestAnimationFrame(renderGame);
@@ -44,9 +64,13 @@ function renderGame() {
   ctx.beginPath();
   for (let i in players) {
     const player = players[i];
-    //players[i].interp(delt);
     if (players[i].id == selfId) {
-      ctx.fillStyle = '#1b37c2';
+      if(players[i].d == true){
+        ctx.fillStyle = "#9e0d00";
+      } else {
+        ctx.fillStyle = '#1b37c2';
+      }
+      
       ctx.arc(player.x, player.y, 17.14, 0, 2 * Math.PI);
       ctx.fill();
       ctx.closePath();
@@ -57,11 +81,25 @@ function renderGame() {
     const player = players[i];
     if (players[i].id != selfId) {
       ctx.beginPath();
-      ctx.fillStyle = '#2b3670';
+      // filling with a different color if player is dead
+      if(players[i].d == true){
+        ctx.fillStyle = "#691d16";
+      } else {
+        ctx.fillStyle = '#2b3670';
+      }
       ctx.arc(player.x, player.y, 17.14, 0, 2 * Math.PI);
       ctx.fill();
       ctx.closePath();
     }
+  }
+
+  for (let e in enemies) {
+    const enemy = enemies[e];
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(120,120,120,0.9)';
+    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.closePath();
   }
 }
 

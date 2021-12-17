@@ -9,6 +9,7 @@ const wss = new WebSocket.Server({ noServer: true });
 app.use(express.static("src/client"));
 
 let players = {};
+let enemies = [];
 
 const nano = function () {
 	const hrtime = process.hrtime();
@@ -21,7 +22,10 @@ app.get("/", function (req, res) {
 });
 let id = 1;
 
+let enemyId = 0;
+
 const { Player } = require("./player");
+const { Enemy } = require("./enemy");
 
 wss.on("connection", ws => {
 	ws.binaryType = "arraybuffer"
@@ -60,10 +64,11 @@ wss.on("connection", ws => {
 
 	players[clientId].client.send(msgpack.encode({ pi: playerInitPack }));
 
+	players[clientId].client.send(msgpack.encode({ ei: enemyInitPack }));
+
 	ws.on('close', () => {
 		//Send all clients the id of the player leaving
 		for (let i of Object.keys(players)) {
-			console.log('bruh');
 			players[i].client.send(msgpack.encode({ l: clientId }))
 		}
 
@@ -73,7 +78,6 @@ wss.on("connection", ws => {
 
 	ws.on('message', data => {
 		let d = msgpack.decode(new Uint8Array(data));
-        //console.log("data: " + d);
 		if (d.mp) {
 			player.mousePos.x = d.mp[0];
 			player.mousePos.y = d.mp[1];
@@ -93,6 +97,7 @@ server.on('upgrade', (request, socket, head) => {
 
 let lastTime = Date.now();
 let playerPack = [];
+let enemyInitPack = [];
 
 //Get all player init pack and push to player init array
 for (let i in players) {
@@ -104,9 +109,47 @@ function mainLoop() {
 	let delta = time - lastTime;
 	lastTime = time;
 
+
+	// Spawning Enemies
+	if (Math.random() > 0.98){
+		// capping enemies
+		if(enemies.length < 65){
+			let newEnemy = new Enemy({ type: 'normal', radius: 20+Math.random()*30, speed: 5+Math.random()*10, id: enemyId });
+			//Push to object
+			enemies.push(newEnemy);
+			enemyInitPack.push(newEnemy.getInitPack());
+			for (let i in players){
+				players[i].enemyInitPack.push(newEnemy.getInitPack());
+			}
+			enemyId++;
+		}
+	}
+
     for (let i in players) {
 		//Update player position
 		players[i].move(delta);
+
+		// Collision with enemies
+		for (let e in enemies){
+			if(Math.sqrt((enemies[e].x - players[i].x) ** 2 + (enemies[e].y - players[i].y) ** 2) < 17.14 /*Player's radius isn't supported*/ + enemies[e].radius){
+				players[i].dead = true;
+				players[i].deadChanged = true;
+			}
+		}
+
+		// Players saving other dead players
+		for (let e in players){
+			if(players[e].id != players[i].id){
+				if(Math.sqrt((players[e].x - players[i].x) ** 2 + (players[e].y - players[i].y) ** 2) < 17.14*2){
+					players[i].dead = false;
+					players[i].deadChanged = true;
+				}
+			}
+		}
+	}
+
+	for (let i in enemies) {
+		enemies[i].move(delta, players, enemies);
 	}
 
 	for (let i in players) {
@@ -115,6 +158,9 @@ function mainLoop() {
 				playerPack.push(players[j].getUpdatePack());
 			}
 		}
+		for (let e in enemies) {
+			players[i].enemyUpdatePack.push(enemies[e]);
+		}
 		playerPack.push(players[i].getUpdatePack());
 	}
 
@@ -122,6 +168,18 @@ function mainLoop() {
 		players[i].playerPack = [];
 		if(playerPack.length > 0){
 			players[i].client.send(msgpack.encode({ pu: playerPack }));
+		}
+
+		//Send enemy init pack to client
+		if (players[i].enemyInitPack.length > 0) {
+			players[i].client.send(msgpack.encode({ ei: players[i].enemyInitPack }));
+			players[i].enemyInitPack = [];
+		}
+
+		//Send enemy update pack to client
+		if (players[i].enemyUpdatePack.length > 0) {
+			players[i].client.send(msgpack.encode({ eu: players[i].enemyUpdatePack }));
+			players[i].enemyUpdatePack = [];
 		}
 	}
 

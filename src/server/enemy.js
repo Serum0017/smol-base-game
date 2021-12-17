@@ -3,11 +3,21 @@ let canvas = { width: 1280, height: 720 };
 class Enemy {
 	constructor(options) {
 		Object.assign(this, options);
-        this.x = canvas.width*Math.random();
-        this.y = canvas.height*Math.random();
+        if(Math.random() < 0.25){
+            this.x = canvas.width*Math.random();
+            this.y = 0;
+        } else if(Math.random() < 0.50){
+            this.x = canvas.width*Math.random();
+            this.y = canvas.height;
+        } else if(Math.random() < 0.75){
+            this.x = 0;
+            this.y = canvas.height*Math.random();
+        } else{
+            this.x = canvas.width;
+            this.y = canvas.height*Math.random();
+        }
         this.vx = 0;
         this.vy = 0;
-        this.radius = 30;
         this.angle = Math.random()*Math.PI*2;
     }
 
@@ -24,6 +34,7 @@ class Enemy {
 	getInitPack() {
 		let pack = {
             id: this.id,
+            radius: this.radius,
 			x: Math.round(this.x),
 			y: Math.round(this.y),
 		};
@@ -31,8 +42,8 @@ class Enemy {
 		return pack;
 	}
 	move(delta, players, enemies) {
-        this.vx = Math.cos(this.angle);
-        this.vy = Math.sin(this.angle);
+        this.vx = Math.cos(this.angle)/100;
+        this.vy = Math.sin(this.angle)/100;
 
         // Wall Bouncing
         if (this.x - this.radius < 0) {
