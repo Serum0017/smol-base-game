@@ -26,6 +26,9 @@ ws.addEventListener("message", function (data) {
         }
       }
     }
+    if (message.l) {
+      delete players[message.l];
+    }
     if (message.si) {
       Resize();
       requestAnimationFrame(renderGame);

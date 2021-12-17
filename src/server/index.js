@@ -63,6 +63,7 @@ wss.on("connection", ws => {
 	ws.on('close', () => {
 		//Send all clients the id of the player leaving
 		for (let i of Object.keys(players)) {
+			console.log('bruh');
 			players[i].client.send(msgpack.encode({ l: clientId }))
 		}
 
