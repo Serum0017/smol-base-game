@@ -42,8 +42,8 @@ class Enemy {
 		return pack;
 	}
 	move(delta, players, enemies) {
-        this.vx = Math.cos(this.angle)/100;
-        this.vy = Math.sin(this.angle)/100;
+        this.vx = Math.cos(this.angle)/50;
+        this.vy = Math.sin(this.angle)/50;
 
         // Wall Bouncing
         if (this.x - this.radius < 0) {

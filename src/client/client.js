@@ -42,6 +42,9 @@ ws.addEventListener("message", function (data) {
         }
       }
     }
+    if (message.er){
+      enemies = {};
+    }
 
     // Players leaving
     if (message.l) {
