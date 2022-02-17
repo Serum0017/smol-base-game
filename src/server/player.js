@@ -2,8 +2,8 @@ let canvas = { width: 1280, height: 720 };
 
 class Player {
 	constructor(id, client) {
-        this.x = 0;
-        this.y = 0;
+        this.x = canvas.width/2;
+        this.y = canvas.height/2;
         this.radius = 17.14; // currently not circulated in updatepack or initpack
         this.xChanged = false;
         this.yChanged = false;
@@ -15,6 +15,7 @@ class Player {
         this.deadChanged = false;
         this.enemyInitPack = [];
         this.enemyUpdatePack = [];
+        this.speed = 17*4/100;
     }
 
     getUpdatePack() {
@@ -57,17 +58,19 @@ class Player {
     }
 
     move(delta) {
-        // Movement
         if(!this.dead){
             this.vel.x = 0;
             this.vel.y = 0;
-            let dx = this.x - this.mousePos.x;
-            let dy = this.y - this.mousePos.y;
+            let dx = canvas.width / 2 - this.mousePos.x;
+			let dy = canvas.height / 2 - this.mousePos.y;
             let distance = Math.sqrt(dx * dx + dy * dy);
-            distance /= 100;
+            distance /= 300;
             let angle = Math.atan2(dy, dx);
-            this.vel.x = Math.cos(angle) * Math.min(distance, 17) * -1;
-            this.vel.y = Math.sin(angle) * Math.min(distance, 17) * -1;
+            if (distance > this.speed) {
+				distance = this.speed;
+			}
+            this.vel.x = -Math.cos(angle) * distance;
+            this.vel.y = -Math.sin(angle) * distance;
             this.x += this.vel.x * delta;
             this.y += this.vel.y * delta;
         }

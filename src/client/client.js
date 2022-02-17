@@ -59,24 +59,30 @@ ws.addEventListener("message", function (data) {
     }
     requestAnimationFrame(renderGame);
 });
+// homing, blue dasher, switcher, blue aura, slower red aura
 
+let me = {x: 0, y: 0};
 function renderGame() {
   //bg
   ctx.fillStyle = "#333333";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.beginPath();
   for (let i in players) {
     const player = players[i];
+    ctx.beginPath();
     if (players[i].id == selfId) {
       if(players[i].d == true){
         ctx.fillStyle = "#9e0d00";
       } else {
         ctx.fillStyle = '#1b37c2';
       }
-      
-      ctx.arc(player.x, player.y, 17.14, 0, 2 * Math.PI);
+      me.x = player.x;
+      me.y = player.y;
+      ctx.arc(canvas.width/2, canvas.height/2, 17.14, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.strokeStyle = 'green';
+      ctx.stroke();
       ctx.closePath();
+      ctx.strokeStyle = 'black';
     }
   }
 
@@ -90,9 +96,12 @@ function renderGame() {
       } else {
         ctx.fillStyle = '#2b3670';
       }
-      ctx.arc(player.x, player.y, 17.14, 0, 2 * Math.PI);
+      ctx.arc(player.x-me.x+canvas.width/2, player.y-me.y+canvas.height/2, 17.14, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.strokeStyle = 'green';
+      ctx.stroke();
       ctx.closePath();
+      ctx.strokeStyle = 'black';
     }
   }
 
@@ -100,10 +109,13 @@ function renderGame() {
     const enemy = enemies[e];
     ctx.beginPath();
     ctx.fillStyle = 'rgba(120,120,120,0.9)';
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, 2 * Math.PI);
+    ctx.arc(enemy.x-me.x+canvas.width/2, enemy.y-me.y+canvas.height/2, enemy.radius, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.stroke();
     ctx.closePath();
   }
+  ctx.strokeRect(-me.x+canvas.width/2,-me.y+canvas.height/2,canvas.width, canvas.height);
+  console.log(me.x + ' ' + me.y);
 }
 
 function Resize() {
@@ -133,3 +145,7 @@ function getCursorPosition(canvas, event) {
 window.addEventListener('mousemove', function (e) {
   getCursorPosition(canvas, e);
 })
+
+function offset(obj){
+  return {x: obj.x - me.x - canvas.width, y: obj.y - me.y - canvas.height};
+}

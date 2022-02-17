@@ -100,21 +100,6 @@ let playerPack = [];
 let enemyInitPack = [];
 let timer = 10000;
 
-// [type, radius, speed, amount]
-let waves = [
-	[["normal",24,2,12]],
-	[["normal",24,2,24]],
-	[["normal",36,2,24]],
-	[["normal",24,2,24],["normal",12,3,24]],
-	[["normal",48,3,24],["normal",12,3,48]],
-	[["normal",24,2,48],["normal",12,2,48]],
-	[["normal",24,2,48],["normal",36,2,48],["normal",12,2,48]],
-	[["normal",24,2,26],["normal",36,2,26],["normal",48,2,26],["normal",12,2,26]],
-	[["normal",18,2,108]],
-	[["normal",18,7,86]],
-]
-let waveIndex = 0;
-
 //Get all player init pack and push to player init array
 for (let i in players) {
 	playerInitPack.push(players[i].getInitPack());
@@ -126,7 +111,7 @@ function mainLoop() {
 	lastTime = time;
 
 	timer += delta;
-	if(timer > 10000+waveIndex*1000){
+	/*if(timer > 10000+waveIndex*1000){
 		timer = 0;
 
 		// Clearing enemies from client
@@ -156,6 +141,25 @@ function mainLoop() {
 		if(waveIndex >= waves.length){
 			waveIndex = 0;
 		}
+	}*/
+	let interval = 1000;// once a second
+	if(enemies.length < timer/interval && enemies.length < 200){
+		let newEnemy = new Enemy({ type: 'normal', radius: Math.random()*20+10, speed: Math.random()*10+5, id: enemyId });
+		//Push to client
+		enemies.push(newEnemy);
+		enemyInitPack.push(newEnemy.getInitPack());
+		for (let j in players){
+			players[j].enemyInitPack.push(newEnemy.getInitPack());
+		}
+		enemyId++;
+	}
+
+	// resetting enemies if there's no clients
+	console.log(Object.keys(players).length);
+	if(Object.keys(players).length == 0){
+		enemies = [];
+		enemyInitPack = [];
+		timer = 0;
 	}
 
     for (let i in players) {
