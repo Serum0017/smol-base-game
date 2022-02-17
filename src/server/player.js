@@ -2,8 +2,8 @@ let canvas = { width: 1280, height: 720 };
 
 class Player {
 	constructor(id, client) {
-        this.x = 640;
-        this.y = 360;
+        this.x = 0;
+        this.y = 0;
         this.radius = 17.14; // currently not circulated in updatepack or initpack
         this.xChanged = false;
         this.yChanged = false;
