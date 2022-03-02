@@ -21,11 +21,16 @@ app.get("/", function (req, res) {
 	res.sendFile("index.html");
 });
 let id = 1;
-
 let enemyId = 0;
+let obstacleId = 0;
 
 const { Player } = require("./player");
 const { Enemy } = require("./enemy");
+const { runCollision } = require('./physics.js');
+let defaultMap = require("./maps/hub.js");
+//let activeMaps = [];
+let enemy = [];
+let obstacle = [];
 
 wss.on("connection", ws => {
 	ws.binaryType = "arraybuffer"
@@ -66,6 +71,8 @@ wss.on("connection", ws => {
 
 	players[clientId].client.send(msgpack.encode({ ei: enemyInitPack }));
 
+	players[clientId].client.send(msgpack.encode({ oi: packArea(defaultMap, 0) }));
+
 	ws.on('close', () => {
 		//Send all clients the id of the player leaving
 		for (let i of Object.keys(players)) {
@@ -82,6 +89,49 @@ wss.on("connection", ws => {
 			player.mousePos.x = d.mp[0];
 			player.mousePos.y = d.mp[1];
 		}
+		if (d.cs) {
+			if(player.inputType == 'mouse'){
+				player.inputType = 'keyboard';
+			} else {
+				player.inputType = 'mouse';
+			}
+		}
+		if (d.kD) {
+			if(d.kD == 'w' || d.kD == 'arrowup'){
+				player.inputs.up = true;
+			}
+			if(d.kD == 'a' || d.kD == 'arrowleft'){
+				player.inputs.left = true;
+			}
+			if(d.kD == 'd' || d.kD == 'arrowright'){
+				player.inputs.right = true;
+			}
+			if(d.kD == 's' || d.kD == 'arrowdown'){
+				player.inputs.down = true;
+			}
+		}
+		if (d.kU) {
+			if(d.kU == 'w' || d.kU == 'arrowup'){
+				player.inputs.up = false;
+			}
+			if(d.kU == 'a' || d.kU == 'arrowleft'){
+				player.inputs.left = false;
+			}
+			if(d.kU == 'd' || d.kU == 'arrowright'){
+				player.inputs.right = false;
+			}
+			if(d.kU == 's' || d.kU == 'arrowdown'){
+				player.inputs.down = false;
+			}
+			if(d.kU == 'r'){
+				player.dead = false;
+				player.deadChanged = true;
+				player.x = 25;// map spawn
+				player.y = 25;
+				player.xChanged = true;
+				player.yChanged = true;
+			}
+		}
 	})
 })
 
@@ -95,9 +145,12 @@ server.on('upgrade', (request, socket, head) => {
 	});
 });
 
+// simulate map is in physics
+
 let lastTime = Date.now();
 let playerPack = [];
 let enemyInitPack = [];
+let obstacleInitPack = [];
 let timer = 10000;
 
 //Get all player init pack and push to player init array
@@ -106,56 +159,24 @@ for (let i in players) {
 }
 
 function mainLoop() {
+	/*for(let i in players){
+		for(let j in map.areas[area].obstacles){
+			boundCircleRect(players[i], map.areas[area].obstacles[j]);// not done yet
+		}
+	}*/
 	let time = Date.now();
 	let delta = time - lastTime;
 	lastTime = time;
-
-	timer += delta;
-	/*if(timer > 10000+waveIndex*1000){
-		timer = 0;
-
-		// Clearing enemies from client
-		enemies = [];
-		enemyInitPack = [];
-		for (let i in players){
-			players[i].enemyInitPack = [];
-			players[i].client.send(msgpack.encode({ er: true }));
-		}
-
-		// Interpreting Waves Array
-		for (let i in waves[waveIndex]){
-			for(let j = 0; j < waves[waveIndex][i][3]; j++){
-				// Spawning Enemies
-				let newEnemy = new Enemy({ type: waves[waveIndex][i][0], radius: waves[waveIndex][i][1], speed: waves[waveIndex][i][2], id: enemyId });
-				//Push to client
-				enemies.push(newEnemy);
-				enemyInitPack.push(newEnemy.getInitPack());
-				for (let j in players){
-					players[j].enemyInitPack.push(newEnemy.getInitPack());
-				}
-				enemyId++;
-			}
-		}
-
-		waveIndex++;
-		if(waveIndex >= waves.length){
-			waveIndex = 0;
-		}
-	}*/
-	let interval = 1000;// once a second
-	if(enemies.length < timer/interval && enemies.length < 200){
-		let newEnemy = new Enemy({ type: 'normal', radius: Math.random()*20+10, speed: Math.random()*10+5, id: enemyId });
+		/*let newEnemy = new Enemy({ type: 'normal', radius: Math.random()*20+10, speed: Math.random()*10+5, id: enemyId });
 		//Push to client
 		enemies.push(newEnemy);
 		enemyInitPack.push(newEnemy.getInitPack());
 		for (let j in players){
 			players[j].enemyInitPack.push(newEnemy.getInitPack());
 		}
-		enemyId++;
-	}
+		enemyId++;*/
 
 	// resetting enemies if there's no clients
-	console.log(Object.keys(players).length);
 	if(Object.keys(players).length == 0){
 		enemies = [];
 		enemyInitPack = [];
@@ -168,7 +189,7 @@ function mainLoop() {
 
 		// Collision with enemies
 		for (let e in enemies){
-			if(Math.sqrt((enemies[e].x - players[i].x) ** 2 + (enemies[e].y - players[i].y) ** 2) < 17.14 /*Player's radius isn't supported*/ + enemies[e].radius){
+			if(Math.sqrt((enemies[e].x - players[i].x) ** 2 + (enemies[e].y - players[i].y) ** 2) < 24.5 /*Player's radius isn't supported*/ + enemies[e].radius){
 				players[i].dead = true;
 				players[i].deadChanged = true;
 			}
@@ -177,13 +198,16 @@ function mainLoop() {
 		// Players saving other dead players
 		for (let e in players){
 			if(players[e].id != players[i].id){
-				if(Math.sqrt((players[e].x - players[i].x) ** 2 + (players[e].y - players[i].y) ** 2) < 17.14*2){
+				if(Math.sqrt((players[e].x - players[i].x) ** 2 + (players[e].y - players[i].y) ** 2) < 24.5*2){
 					players[i].dead = false;
 					players[i].deadChanged = true;
 				}
 			}
 		}
 	}
+
+	simulateArea(defaultMap, 0, delta);
+	runCollision(players, defaultMap.areas[0].obstacles, {width: defaultMap.default.width, height: defaultMap.default.height})
 
 	for (let i in enemies) {
 		enemies[i].move(delta, players, enemies);
@@ -218,10 +242,47 @@ function mainLoop() {
 			players[i].client.send(msgpack.encode({ eu: players[i].enemyUpdatePack }));
 			players[i].enemyUpdatePack = [];
 		}
+
+		//Send enemy init pack to client
+		if (players[i].obstacleInitPack.length > 0) {
+			players[i].client.send(msgpack.encode({ oi: players[i].obstacleInitPack }));
+			players[i].obstacleInitPack = [];
+		}
+
+		//Send obstacle update pack to client
+		if (players[i].obstacleUpdatePack.length > 0) {
+			players[i].client.send(msgpack.encode({ ou: players[i].obstacleUpdatePack }));
+			players[i].obstacleUpdatePack = [];
+		}
 	}
 
 	//Reset player pack array
 	playerPack = [];
+}
+
+function packArea(map, area){
+	for(let i in map.areas[area].obstacles){
+		let obstacle = map.areas[area].obstacles[i]; 
+		//console.log(obstacle);
+		obstacleInitPack.push(obstacle.getInitPack(obstacleId));
+		for (let j in players){
+			players[j].obstacleInitPack.push(obstacle.getInitPack(obstacleId));
+		}
+		obstacleId++;
+	}
+	for(let j in players){
+		players[j].client.send(msgpack.encode({ dimensions: {width: map.default.width, height: map.default.height}}));
+	}
+}
+
+function simulateArea(map, area, dt){
+	for(let i in map.areas[area].obstacles){
+		let obstacle = map.areas[area].obstacles[i];
+		obstacle.update(dt);
+		for (let j in players){
+			players[j].obstacleUpdatePack.push(obstacle.getUpdatePack());
+		}
+	}
 }
 
 setInterval(() => {
@@ -231,6 +292,6 @@ setInterval(() => {
 	if (timeTaken > 250) {
 		console.log("An update took " + timeTaken + "ms");
 	}
-}, 1000 / 30);
+}, 1000 / 60);
 
 console.log("App listening to Server " + PORT);
