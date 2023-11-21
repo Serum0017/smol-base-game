@@ -4,7 +4,7 @@ class Player {
 	constructor(id, client) {
         this.x = canvas.width/2;
         this.y = canvas.height/2;
-        this.radius = 17.14; // currently not circulated in updatepack or initpack
+        this.radius = 24.5; // currently not circulated in updatepack or initpack
         this.xChanged = false;
         this.yChanged = false;
         this.id = id;
@@ -15,7 +15,14 @@ class Player {
         this.deadChanged = false;
         this.enemyInitPack = [];
         this.enemyUpdatePack = [];
-        this.speed = 17*4/100;
+        this.obstacleInitPack = [];
+        this.obstacleUpdatePack = [];
+        this.speed = 0.3;
+        this.inputs = {up: false, down: false, right: false, left: false};
+        this.inputType = "keyboard";
+        this.area = 1;
+        this.world = 'hub';
+        //this.grav = -1;
     }
 
     getUpdatePack() {
@@ -53,6 +60,7 @@ class Player {
             id: this.id,
             d: this.dead,
             msp: this.mousePos,
+            radius: this.radius,
         };
         return pack;
     }
@@ -61,35 +69,44 @@ class Player {
         if(!this.dead){
             this.vel.x = 0;
             this.vel.y = 0;
-            let dx = canvas.width / 2 - this.mousePos.x;
-			let dy = canvas.height / 2 - this.mousePos.y;
-            let distance = Math.sqrt(dx * dx + dy * dy);
-            distance /= 300;
-            let angle = Math.atan2(dy, dx);
-            if (distance > this.speed) {
-				distance = this.speed;
-			}
-            this.vel.x = -Math.cos(angle) * distance;
-            this.vel.y = -Math.sin(angle) * distance;
+            if(this.inputType == "mouse"){
+                let dx = canvas.width / 2 - this.mousePos.x;
+                let dy = canvas.height / 2 - this.mousePos.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                distance /= 300;
+                let angle = Math.atan2(dy, dx);
+                if (distance > this.speed) {
+                    distance = this.speed;
+                }
+                this.vel.x = -Math.cos(angle) * distance;
+                this.vel.y = -Math.sin(angle) * distance;
+                this.xChanged = true;
+                this.yChanged = true;
+            } else if(this.inputType == "keyboard"){
+                //Keyboard movement
+                if (this.inputs.right) {
+                    this.vel.x = this.speed;
+                    this.xChanged = true;
+                } else if (this.inputs.left) {
+                    this.vel.x = -this.speed;
+                    this.xChanged = true;
+                }
+                if (this.inputs.up) {
+                    this.vel.y = -this.speed;
+                    this.yChanged = true;
+                } else if (this.inputs.down) {
+                    this.vel.y = this.speed;
+                    this.yChanged = true;
+                }
+            }
             this.x += this.vel.x * delta;
             this.y += this.vel.y * delta;
+            /*if(this.y > 0){
+                this.y += this.grav * delta;
+            } else {
+                this.y = 0;
+            }*/
         }
-
-        // Making sure this isn't out of level bounds (assuming 1280 by 720 canvas)
-        if (this.x - this.radius < 0) {
-            this.x = this.radius;
-        } else if (this.x + this.radius > 1280) {
-            this.x = 1280 - this.radius;
-        }
-
-        if (this.y - this.radius < 0) {
-            this.y = this.radius;
-        } else if (this.y + this.radius > 720) {
-            this.y = 720 - this.radius;
-        }
-
-        this.xChanged = true;
-        this.yChanged = true;
     }
 }
 
