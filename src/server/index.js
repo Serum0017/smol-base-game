@@ -86,7 +86,7 @@ wss.on("connection", ws => {
 })
 
 //Connection to server:
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT);
 
 server.on('upgrade', (request, socket, head) => {
@@ -155,7 +155,6 @@ function mainLoop() {
 	}
 
 	// resetting enemies if there's no clients
-	console.log(Object.keys(players).length);
 	if(Object.keys(players).length == 0){
 		enemies = [];
 		enemyInitPack = [];
